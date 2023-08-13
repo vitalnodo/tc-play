@@ -23,7 +23,6 @@ const CFLAGS_WARN = &[_][]const u8{
 fn common(step: *std.Build.Step.Compile) void {
     const SRCS_COMMON = &[_][]const u8{
         "tcplay.c",
-        "crc32.c",
         "safe_mem.c",
         "io.c",
         "hdr.c",
@@ -102,4 +101,15 @@ pub fn build(b: *std.Build) void {
     );
     lib_shared.version_script = "tcplay.map";
     b.getInstallStep().dependOn(&lib_shared_artifact.step);
+
+    const crc32 = b.addObject(.{
+        .name = "crc32",
+        .root_source_file = .{ .path = "crc32.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    crc32.force_pic = true;
+    exe.addObject(crc32);
+    lib_static.addObject(crc32);
+    lib_shared.addObject(crc32);
 }
