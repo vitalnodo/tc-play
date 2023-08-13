@@ -5,3 +5,5 @@
 *.so
 *.so.*
 tcplay
+zig-cache/
+build/

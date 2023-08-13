@@ -1,5 +1,50 @@
 const std = @import("std");
 
+const CFLAGS_WARN = &[_][]const u8{
+    "-Wsystem-headers",
+    "-Wall",
+    "-W",
+    "-Wno-unused-parameter",
+    "-Wstrict-prototypes",
+    "-Wmissing-prototypes",
+    "-Wpointer-arith",
+    "-Wold-style-definition",
+    "-Wreturn-type",
+    "-Wwrite-strings",
+    "-Wswitch",
+    "-Wshadow",
+    "-Wcast-align",
+    "-Wunused-parameter",
+    "-Wchar-subscripts",
+    "-Winline",
+    "-Wnested-externs",
+};
+
+fn common(step: *std.Build.Step.Compile) void {
+    const SRCS_COMMON = &[_][]const u8{
+        "tcplay.c",
+        "crc32.c",
+        "safe_mem.c",
+        "io.c",
+        "hdr.c",
+        "humanize.c",
+        "crypto.c",
+        "generic_xts.c",
+    };
+    step.addCSourceFiles(
+        SRCS_COMMON,
+        CFLAGS_WARN,
+    );
+    step.addSystemIncludePath(.{ .path = "/usr/include" });
+    step.linkSystemLibrary("devmapper");
+    step.linkSystemLibrary("uuid");
+    step.linkSystemLibrary("gcrypt");
+    step.addCSourceFiles(&.{
+        "crypto-gcrypt.c",
+        "pbkdf2-gcrypt.c",
+    }, CFLAGS_WARN);
+}
+
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
@@ -14,57 +59,47 @@ pub fn build(b: *std.Build) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall. Here we do not
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
-
-    const exe = b.addExecutable(.{
-        .name = "tc-play",
+    const options = .{
+        .name = "tcplay",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = .{ .path = "main.c" },
         .target = target,
         .optimize = optimize,
-    });
+        .link_libc = true,
+    };
+    const exe = b.addExecutable(options);
+    common(exe);
 
-    // This declares intent for the executable to be installed into the
-    // standard location when the user invokes the "install" step (the default
-    // step when running `zig build`).
-    b.installArtifact(exe);
+    // replace zig-out/bin path with with build
+    const artifact_dest = std.Build.Step.InstallArtifact.Options{
+        .dest_dir = std.Build.Step.InstallArtifact.Options.Dir{
+            .override = std.Build.InstallDir{ .custom = "../build" },
+        },
+    };
+    const exe_install_artifact = b.addInstallArtifact(
+        exe,
+        artifact_dest,
+    );
+    b.getInstallStep().dependOn(&exe_install_artifact.step);
 
-    // This *creates* a Run step in the build graph, to be executed when another
-    // step is evaluated that depends on it. The next line below will establish
-    // such a dependency.
-    const run_cmd = b.addRunArtifact(exe);
+    const lib_static = b.addStaticLibrary(options);
+    common(lib_static);
+    lib_static.addCSourceFiles(&.{"tcplay_api.c"}, CFLAGS_WARN);
+    lib_static.version_script = "tcplay.map";
+    const lib_static_artifact = b.addInstallArtifact(
+        lib_static,
+        artifact_dest,
+    );
+    b.getInstallStep().dependOn(&lib_static_artifact.step);
 
-    // By making the run step depend on the install step, it will be run from the
-    // installation directory rather than directly from within the cache directory.
-    // This is not necessary, however, if the application depends on other installed
-    // files, this ensures they will be present and in the expected location.
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    // This allows the user to pass arguments to the application in the build
-    // command itself, like this: `zig build run -- arg1 arg2 etc`
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
-    }
-
-    // This creates a build step. It will be visible in the `zig build --help` menu,
-    // and can be selected like this: `zig build run`
-    // This will evaluate the `run` step rather than the default, which is "install".
-    const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&run_cmd.step);
-
-    // Creates a step for unit testing. This only builds the test executable
-    // but does not run it.
-    const unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const run_unit_tests = b.addRunArtifact(unit_tests);
-
-    // Similar to creating the run step earlier, this exposes a `test` step to
-    // the `zig build --help` menu, providing a way for the user to request
-    // running the unit tests.
-    const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&run_unit_tests.step);
+    const lib_shared = b.addSharedLibrary(options);
+    common(lib_shared);
+    lib_shared.addCSourceFiles(&.{"tcplay_api.c"}, CFLAGS_WARN);
+    const lib_shared_artifact = b.addInstallArtifact(
+        lib_shared,
+        artifact_dest,
+    );
+    lib_shared.version_script = "tcplay.map";
+    b.getInstallStep().dependOn(&lib_shared_artifact.step);
 }

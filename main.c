@@ -1,3 +1,4 @@
+#include "MAJ_MIN_VER.h"
 /*
  * Copyright (c) 2011 Alex Hornung <alex@alexhornung.com>.
  * All rights reserved.
