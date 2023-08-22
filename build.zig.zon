@@ -1,0 +1,14 @@
+.{
+    .name = "tcplay",
+    .version = "3.3.0",
+    .dependencies = .{
+        .whirlpool = .{
+            .url = "https://github.com/vitalnodo/whirlpool.zig/archive/a346cbc58755d3f495ac209c35844095c1728940.tar.gz",
+            .hash = "1220a7dda66b910f60a63f0f82730689e254e0886a480d9cbba7a4ec5c0dd4d89a3c",
+        },
+        .ripemd160 = .{
+            .url = "https://github.com/vitalnodo/ripemd160.zig/archive/8afeb0e153dd980ffeaece659af4b3ed36d27dd5.tar.gz",
+            .hash = "12208986fe6b0c4520d5212715ad6d4a006c8e2708f744b1b893606d23e8ac233d70",
+        },
+    },
+}

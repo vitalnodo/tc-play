@@ -40,7 +40,6 @@ fn common(step: *std.Build.Step.Compile) void {
     step.linkSystemLibrary("gcrypt");
     step.addCSourceFiles(&.{
         "crypto-gcrypt.c",
-        "pbkdf2-gcrypt.c",
     }, CFLAGS_WARN);
 }
 
@@ -112,4 +111,27 @@ pub fn build(b: *std.Build) void {
     exe.addObject(crc32);
     lib_static.addObject(crc32);
     lib_shared.addObject(crc32);
+
+    const pbkdf2 = b.addObject(.{
+        .name = "pbkdf2_",
+        .root_source_file = .{ .path = "pbkdf2.zig" },
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    pbkdf2.addIncludePath(.{ .path = "." });
+    exe.addObject(pbkdf2);
+    lib_static.addObject(pbkdf2);
+    lib_shared.addObject(pbkdf2);
+
+    const whirlpool_dep = b.dependency("whirlpool", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const ripemd160_dep = b.dependency("ripemd160", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    pbkdf2.addModule("whirlpool", whirlpool_dep.module("whirlpool"));
+    pbkdf2.addModule("ripemd160", ripemd160_dep.module("ripemd160"));
 }
