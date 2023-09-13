@@ -41,6 +41,8 @@ fn common(step: *std.Build.Step.Compile) void {
     step.addCSourceFiles(&.{
         "crypto-gcrypt.c",
     }, CFLAGS_WARN);
+    step.defineCMacro("MAJ_VER", "3");
+    step.defineCMacro("MIN_VER", "3");
 }
 
 // Although this function looks imperative, note that its job is to
