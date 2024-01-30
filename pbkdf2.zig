@@ -3,8 +3,8 @@ const testing = std.testing;
 const p = std.crypto.pwhash.pbkdf2;
 const errno = @cImport(@cInclude("errno.h"));
 const tcplay = @cImport(@cInclude("tcplay.h"));
-const whirlpool = @import("whirlpool");
-const ripemd160 = @import("ripemd160");
+const whirlpool = @import("libcrypto").hash.whirlpool;
+const ripemd160 = @import("libcrypto").hash.ripemd.ripemd160;
 
 fn do_pbkdf2(
     dk: []u8,
@@ -64,7 +64,7 @@ pub export fn pbkdf2(
             pass,
             salt,
             rounds,
-            std.crypto.auth.hmac.Hmac(whirlpool.Whirlpool),
+            std.crypto.auth.hmac.Hmac(whirlpool),
         );
     }
     if (std.mem.eql(u8, algo, "RIPEMD160")) {
@@ -73,7 +73,7 @@ pub export fn pbkdf2(
             pass,
             salt,
             rounds,
-            std.crypto.auth.hmac.Hmac(ripemd160.Ripemd160),
+            std.crypto.auth.hmac.Hmac(ripemd160),
         );
     }
     return errno.EINVAL;

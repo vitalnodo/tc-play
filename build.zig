@@ -23,6 +23,7 @@ const CFLAGS_WARN = &[_][]const u8{
 fn common(step: *std.Build.Step.Compile) void {
     const SRCS_COMMON = &[_][]const u8{
         "tcplay.c",
+        "main.c",
         "safe_mem.c",
         "io.c",
         "hdr.c",
@@ -30,17 +31,17 @@ fn common(step: *std.Build.Step.Compile) void {
         "crypto.c",
         "generic_xts.c",
     };
-    step.addCSourceFiles(
-        SRCS_COMMON,
-        CFLAGS_WARN,
-    );
+    step.addCSourceFiles(.{
+        .files = SRCS_COMMON,
+        .flags = CFLAGS_WARN,
+    });
     step.addSystemIncludePath(.{ .path = "/usr/include" });
     step.linkSystemLibrary("devmapper");
     step.linkSystemLibrary("uuid");
     step.linkSystemLibrary("gcrypt");
-    step.addCSourceFiles(&.{
+    step.addCSourceFiles(.{ .files = &.{
         "crypto-gcrypt.c",
-    }, CFLAGS_WARN);
+    }, .flags = CFLAGS_WARN });
     step.defineCMacro("MAJ_VER", "3");
     step.defineCMacro("MIN_VER", "3");
 }
@@ -61,9 +62,6 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const options = .{
         .name = "tcplay",
-        // In this case the main source file is merely a path, however, in more
-        // complicated build scripts, this could be a generated file.
-        .root_source_file = .{ .path = "main.c" },
         .target = target,
         .optimize = optimize,
         .link_libc = true,
@@ -85,8 +83,14 @@ pub fn build(b: *std.Build) void {
 
     const lib_static = b.addStaticLibrary(options);
     common(lib_static);
-    lib_static.addCSourceFiles(&.{"tcplay_api.c"}, CFLAGS_WARN);
-    lib_static.version_script = "tcplay.map";
+    const t = .{
+        .files = &[_][]const u8{
+            "tcplay_api.c",
+        },
+        .flags = CFLAGS_WARN,
+    };
+    lib_static.addCSourceFiles(t);
+    lib_static.version_script = .{ .path = "tcplay.map" };
     const lib_static_artifact = b.addInstallArtifact(
         lib_static,
         artifact_dest,
@@ -95,12 +99,12 @@ pub fn build(b: *std.Build) void {
 
     const lib_shared = b.addSharedLibrary(options);
     common(lib_shared);
-    lib_shared.addCSourceFiles(&.{"tcplay_api.c"}, CFLAGS_WARN);
+    lib_shared.addCSourceFiles(t);
     const lib_shared_artifact = b.addInstallArtifact(
         lib_shared,
         artifact_dest,
     );
-    lib_shared.version_script = "tcplay.map";
+    lib_shared.version_script = .{ .path = "tcplay.map" };
     b.getInstallStep().dependOn(&lib_shared_artifact.step);
 
     const crc32 = b.addObject(.{
@@ -108,8 +112,8 @@ pub fn build(b: *std.Build) void {
         .root_source_file = .{ .path = "crc32.zig" },
         .target = target,
         .optimize = optimize,
+        .pic = true,
     });
-    crc32.force_pic = true;
     exe.addObject(crc32);
     lib_static.addObject(crc32);
     lib_shared.addObject(crc32);
@@ -126,14 +130,10 @@ pub fn build(b: *std.Build) void {
     lib_static.addObject(pbkdf2);
     lib_shared.addObject(pbkdf2);
 
-    const whirlpool_dep = b.dependency("whirlpool", .{
+    const libcrypto_dep = b.dependency("libcrypto", .{
         .target = target,
         .optimize = optimize,
     });
-    const ripemd160_dep = b.dependency("ripemd160", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    pbkdf2.addModule("whirlpool", whirlpool_dep.module("whirlpool"));
-    pbkdf2.addModule("ripemd160", ripemd160_dep.module("ripemd160"));
+    const libcrypto_mod = libcrypto_dep.module("libcrypto");
+    pbkdf2.root_module.addImport("libcrypto", libcrypto_mod);
 }
