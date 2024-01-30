@@ -2,3 +2,5 @@ zig-cache/
 build/
 test/vendor
 test/.bundle
+test/volumes/tmpvol1
+test/Gemfile.lock
