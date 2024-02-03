@@ -3,8 +3,8 @@
     .version = "3.3.0",
     .dependencies = .{
         .libcrypto = .{
-            .url = "https://github.com/vitalnodo/libcrypto/archive/83da60611e8d5afff9a99f79a091f9a4e3d515c6.tar.gz",
-            .hash = "1220bef6bfce2721c705591d1cb52cbe5935c6528a41f94dfd646ba60bef37235b2d",
+            .url = "https://github.com/vitalnodo/libcrypto/archive/43ef5b2e61727c2060bd5ebf5913d8daeac5377a.tar.gz",
+            .hash = "12200f922b14caf2b3459812e55cdc6bb5e942a6a075e73fe389c606c52b53324323",
         },
     },
     .paths = .{""},

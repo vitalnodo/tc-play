@@ -29,7 +29,6 @@ fn common(step: *std.Build.Step.Compile) void {
         "hdr.c",
         "humanize.c",
         "crypto.c",
-        "generic_xts.c",
     };
     step.addCSourceFiles(.{
         .files = SRCS_COMMON,
@@ -38,10 +37,6 @@ fn common(step: *std.Build.Step.Compile) void {
     step.addSystemIncludePath(.{ .path = "/usr/include" });
     step.linkSystemLibrary("devmapper");
     step.linkSystemLibrary("uuid");
-    step.linkSystemLibrary("gcrypt");
-    step.addCSourceFiles(.{ .files = &.{
-        "crypto-gcrypt.c",
-    }, .flags = CFLAGS_WARN });
     step.defineCMacro("MAJ_VER", "3");
     step.defineCMacro("MIN_VER", "3");
 }
@@ -136,4 +131,17 @@ pub fn build(b: *std.Build) void {
     });
     const libcrypto_mod = libcrypto_dep.module("libcrypto");
     pbkdf2.root_module.addImport("libcrypto", libcrypto_mod);
+
+    const crypto = b.addObject(.{
+        .name = "crypto",
+        .root_source_file = .{ .path = "crypto-libcrypto.zig" },
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    crypto.addIncludePath(.{ .path = "." });
+    exe.addObject(crypto);
+    lib_static.addObject(crypto);
+    lib_shared.addObject(crypto);
+    crypto.root_module.addImport("libcrypto", libcrypto_mod);
 }
