@@ -144,4 +144,11 @@ pub fn build(b: *std.Build) void {
     lib_static.addObject(crypto);
     lib_shared.addObject(crypto);
     crypto.root_module.addImport("libcrypto", libcrypto_mod);
+
+    exe.defineCMacro("_GNU_SOURCE", "");
+    lib_static.defineCMacro("_GNU_SOURCE", "");
+    lib_shared.defineCMacro("_GNU_SOURCE", "");
+    exe.defineCMacro("_DEFAULT_SOURCE", "");
+    lib_static.defineCMacro("_DEFAULT_SOURCE", "");
+    lib_shared.defineCMacro("_DEFAULT_SOURCE", "");
 }

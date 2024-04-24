@@ -1,3 +1,16 @@
+# tc-play fork
+
+The main differences between this repository and the original one is that 
+1) the zig build system is used here, which allows one to build using the 
+```bash
+zig build
+```
+2) cryptography written in zig is used, which allows one not to use gcrypt 
+and openssl.
+To build one need to have zig version 0.12.0
+
+Main description:
+
 About
 ==========
 tcplay is a free (BSD-licensed), pretty much fully featured (including multiple
