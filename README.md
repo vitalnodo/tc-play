@@ -7,7 +7,7 @@ zig build
 ```
 2) cryptography written in zig is used, which allows one not to use gcrypt 
 and openssl.
-To build one need to have zig version 0.12.0
+To build one need to have zig version 0.17.0
 
 Main description:
 
