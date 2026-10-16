@@ -28,7 +28,8 @@ pub fn docrypt(
             std.crypto.core.aes.AesEncryptCtx,
             std.crypto.core.aes.AesDecryptCtx,
         );
-        const X = try XTS.init(key);
+        var X = try XTS.init(key);
+        defer X.deinit();
         if (do_encrypt) {
             try X.encrypt(out, in, iv);
         } else {
@@ -43,7 +44,8 @@ pub fn docrypt(
             std.crypto.core.aes.AesEncryptCtx,
             std.crypto.core.aes.AesDecryptCtx,
         );
-        const X = try XTS.init(key);
+        var X = try XTS.init(key);
+        defer X.deinit();
         if (do_encrypt) {
             try X.encrypt(out, in, iv);
         } else {
@@ -58,7 +60,8 @@ pub fn docrypt(
             twofish.TwofishEncryptCtx,
             twofish.TwofishDecryptCtx,
         );
-        const X = try XTS.init(key);
+        var X = try XTS.init(key);
+        defer X.deinit();
         if (do_encrypt) {
             try X.encrypt(out, in, iv);
         } else {
@@ -73,7 +76,8 @@ pub fn docrypt(
             twofish.TwofishEncryptCtx,
             twofish.TwofishDecryptCtx,
         );
-        const X = try XTS.init(key);
+        var X = try XTS.init(key);
+        defer X.deinit();
         if (do_encrypt) {
             try X.encrypt(out, in, iv);
         } else {
@@ -88,7 +92,8 @@ pub fn docrypt(
             serpent.SerpentEncryptCtx,
             serpent.SerpentDecryptCtx,
         );
-        const X = try XTS.init(key);
+        var X = try XTS.init(key);
+        defer X.deinit();
         if (do_encrypt) {
             try X.encrypt(out, in, iv);
         } else {
@@ -103,7 +108,8 @@ pub fn docrypt(
             serpent.SerpentEncryptCtx,
             serpent.SerpentDecryptCtx,
         );
-        const X = try XTS.init(key);
+        var X = try XTS.init(key);
+        defer X.deinit();
         if (do_encrypt) {
             try X.encrypt(out, in, iv);
         } else {

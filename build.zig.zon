@@ -5,8 +5,8 @@
     .minimum_zig_version = "0.17.0",
     .dependencies = .{
         .libcrypto = .{
-            .url = "https://github.com/vitalnodo/libcrypto/archive/fbf6e03515d08cbf2c7f3fa14a5daeacef9973ad.tar.gz",
-            .hash = "libcrypto-0.0.0-gr-xJsQpAQAZdNLm2OIh-Jkx9SLnSI5V69dq5ttsoWcY",
+            .url = "https://github.com/vitalnodo/libcrypto/archive/cbb7504a3fba0b26b0c83f0a73f064a639050466.tar.gz",
+            .hash = "libcrypto-0.0.0-gr-xJh16AQD6dMjj3X7-AXLe9MUPpNeSHB54kRhhOGT0",
         },
     },
     .paths = .{""},
