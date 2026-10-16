@@ -20,7 +20,7 @@ pub fn docrypt(
     out: []u8,
     iv: []u8,
     do_encrypt: bool,
-) bool {
+) error{InvalidLength}!bool {
     if (std.mem.eql(u8, ciphername, "AES-128-XTS")) {
         const cipher = std.crypto.core.aes.Aes128;
         const XTS = xts(
@@ -28,11 +28,11 @@ pub fn docrypt(
             std.crypto.core.aes.AesEncryptCtx,
             std.crypto.core.aes.AesDecryptCtx,
         );
-        const X = XTS.init(key);
+        const X = try XTS.init(key);
         if (do_encrypt) {
-            X.encrypt(out, in, iv);
+            try X.encrypt(out, in, iv);
         } else {
-            X.decrypt(out, in, iv);
+            try X.decrypt(out, in, iv);
         }
         return true;
     }
@@ -43,11 +43,11 @@ pub fn docrypt(
             std.crypto.core.aes.AesEncryptCtx,
             std.crypto.core.aes.AesDecryptCtx,
         );
-        const X = XTS.init(key);
+        const X = try XTS.init(key);
         if (do_encrypt) {
-            X.encrypt(out, in, iv);
+            try X.encrypt(out, in, iv);
         } else {
-            X.decrypt(out, in, iv);
+            try X.decrypt(out, in, iv);
         }
         return true;
     }
@@ -58,11 +58,11 @@ pub fn docrypt(
             twofish.TwofishEncryptCtx,
             twofish.TwofishDecryptCtx,
         );
-        const X = XTS.init(key);
+        const X = try XTS.init(key);
         if (do_encrypt) {
-            X.encrypt(out, in, iv);
+            try X.encrypt(out, in, iv);
         } else {
-            X.decrypt(out, in, iv);
+            try X.decrypt(out, in, iv);
         }
         return true;
     }
@@ -73,11 +73,11 @@ pub fn docrypt(
             twofish.TwofishEncryptCtx,
             twofish.TwofishDecryptCtx,
         );
-        const X = XTS.init(key);
+        const X = try XTS.init(key);
         if (do_encrypt) {
-            X.encrypt(out, in, iv);
+            try X.encrypt(out, in, iv);
         } else {
-            X.decrypt(out, in, iv);
+            try X.decrypt(out, in, iv);
         }
         return true;
     }
@@ -88,11 +88,11 @@ pub fn docrypt(
             serpent.SerpentEncryptCtx,
             serpent.SerpentDecryptCtx,
         );
-        const X = XTS.init(key);
+        const X = try XTS.init(key);
         if (do_encrypt) {
-            X.encrypt(out, in, iv);
+            try X.encrypt(out, in, iv);
         } else {
-            X.decrypt(out, in, iv);
+            try X.decrypt(out, in, iv);
         }
         return true;
     }
@@ -103,11 +103,11 @@ pub fn docrypt(
             serpent.SerpentEncryptCtx,
             serpent.SerpentDecryptCtx,
         );
-        const X = XTS.init(key);
+        const X = try XTS.init(key);
         if (do_encrypt) {
-            X.encrypt(out, in, iv);
+            try X.encrypt(out, in, iv);
         } else {
-            X.decrypt(out, in, iv);
+            try X.decrypt(out, in, iv);
         }
         return true;
     }
@@ -144,9 +144,9 @@ pub export fn syscrypt(
         out,
         iv,
         arg_do_encrypt == 1,
-    );
+    ) catch false;
     if (!ok) {
-        // Don't leave a plaintext copy behind for an unknown cipher
+        // Don't leave a plaintext copy behind for an unknown cipher or bad length
         if (arg_in != arg_out) {
             std.crypto.secureZero(u8, out);
         }
