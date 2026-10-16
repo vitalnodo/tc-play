@@ -3,6 +3,9 @@ const libcrypto = @import("libcrypto");
 const xts = libcrypto.modes.xts;
 const serpent = libcrypto.ciphers.serpent;
 const twofish = libcrypto.ciphers.twofish;
+
+const EINVAL: c_int = @backingInt(std.c.E.INVAL);
+
 pub const struct_tc_crypto_algo = extern struct {
     name: [*c]const u8 = @import("std").mem.zeroes([*c]const u8),
     dm_crypt_str: [*c]const u8 = @import("std").mem.zeroes([*c]const u8),
@@ -16,8 +19,8 @@ pub fn docrypt(
     in: []u8,
     out: []u8,
     iv: []u8,
-    arg_do_encrypt: c_int,
-) void {
+    do_encrypt: bool,
+) bool {
     if (std.mem.eql(u8, ciphername, "AES-128-XTS")) {
         const cipher = std.crypto.core.aes.Aes128;
         const XTS = xts(
@@ -26,12 +29,12 @@ pub fn docrypt(
             std.crypto.core.aes.AesDecryptCtx,
         );
         const X = XTS.init(key);
-        if (arg_do_encrypt == 1) {
+        if (do_encrypt) {
             X.encrypt(out, in, iv);
-        }
-        if (arg_do_encrypt == 0) {
+        } else {
             X.decrypt(out, in, iv);
         }
+        return true;
     }
     if (std.mem.eql(u8, ciphername, "AES-256-XTS")) {
         const cipher = std.crypto.core.aes.Aes256;
@@ -41,12 +44,12 @@ pub fn docrypt(
             std.crypto.core.aes.AesDecryptCtx,
         );
         const X = XTS.init(key);
-        if (arg_do_encrypt == 1) {
+        if (do_encrypt) {
             X.encrypt(out, in, iv);
-        }
-        if (arg_do_encrypt == 0) {
+        } else {
             X.decrypt(out, in, iv);
         }
+        return true;
     }
     if (std.mem.eql(u8, ciphername, "TWOFISH-128-XTS")) {
         const cipher = twofish.Twofish128;
@@ -56,12 +59,12 @@ pub fn docrypt(
             twofish.TwofishDecryptCtx,
         );
         const X = XTS.init(key);
-        if (arg_do_encrypt == 1) {
+        if (do_encrypt) {
             X.encrypt(out, in, iv);
-        }
-        if (arg_do_encrypt == 0) {
+        } else {
             X.decrypt(out, in, iv);
         }
+        return true;
     }
     if (std.mem.eql(u8, ciphername, "TWOFISH-256-XTS")) {
         const cipher = twofish.Twofish256;
@@ -71,12 +74,12 @@ pub fn docrypt(
             twofish.TwofishDecryptCtx,
         );
         const X = XTS.init(key);
-        if (arg_do_encrypt == 1) {
+        if (do_encrypt) {
             X.encrypt(out, in, iv);
-        }
-        if (arg_do_encrypt == 0) {
+        } else {
             X.decrypt(out, in, iv);
         }
+        return true;
     }
     if (std.mem.eql(u8, ciphername, "SERPENT-128-XTS")) {
         const cipher = serpent.Serpent128;
@@ -86,12 +89,12 @@ pub fn docrypt(
             serpent.SerpentDecryptCtx,
         );
         const X = XTS.init(key);
-        if (arg_do_encrypt == 1) {
+        if (do_encrypt) {
             X.encrypt(out, in, iv);
-        }
-        if (arg_do_encrypt == 0) {
+        } else {
             X.decrypt(out, in, iv);
         }
+        return true;
     }
     if (std.mem.eql(u8, ciphername, "SERPENT-256-XTS")) {
         const cipher = serpent.Serpent256;
@@ -101,13 +104,14 @@ pub fn docrypt(
             serpent.SerpentDecryptCtx,
         );
         const X = XTS.init(key);
-        if (arg_do_encrypt == 1) {
+        if (do_encrypt) {
             X.encrypt(out, in, iv);
-        }
-        if (arg_do_encrypt == 0) {
+        } else {
             X.decrypt(out, in, iv);
         }
+        return true;
     }
+    return false;
 }
 
 pub export fn syscrypt(
@@ -120,6 +124,9 @@ pub export fn syscrypt(
     arg_len: usize,
     arg_do_encrypt: c_int,
 ) c_int {
+    if (arg_do_encrypt != 0 and arg_do_encrypt != 1) {
+        return EINVAL;
+    }
     const ciphername = std.mem.span(arg_cipher.*.name);
     const key = arg_key[0..arg_klen];
     const iv = arg_iv[0..8];
@@ -130,14 +137,21 @@ pub export fn syscrypt(
     if (arg_in != arg_out) {
         @memcpy(out, in);
     }
-    docrypt(
+    const ok = docrypt(
         ciphername,
         key,
         in,
         out,
         iv,
-        arg_do_encrypt,
+        arg_do_encrypt == 1,
     );
+    if (!ok) {
+        // Don't leave a plaintext copy behind for an unknown cipher
+        if (arg_in != arg_out) {
+            std.crypto.secureZero(u8, out);
+        }
+        return EINVAL;
+    }
     return 0;
 }
 
