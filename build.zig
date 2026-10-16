@@ -20,7 +20,7 @@ const CFLAGS_WARN = &[_][]const u8{
     "-Wnested-externs",
 };
 
-fn common(mod: *std.Build.Module) void {
+fn common(mod: *std.Build.Module, devmapper: bool) void {
     const SRCS_COMMON = &[_][]const u8{
         "tcplay.c",
         "main.c",
@@ -35,8 +35,12 @@ fn common(mod: *std.Build.Module) void {
         .flags = CFLAGS_WARN,
     });
     mod.addSystemIncludePath(.{ .cwd_relative = "/usr/include" });
-    mod.linkSystemLibrary("devmapper", .{});
-    mod.linkSystemLibrary("uuid", .{});
+    if (devmapper) {
+        mod.linkSystemLibrary("devmapper", .{});
+        mod.linkSystemLibrary("uuid", .{});
+    } else {
+        mod.addCMacro("TCPLAY_NO_DEVMAPPER", "1");
+    }
     mod.addCMacro("MAJ_VER", "3");
     mod.addCMacro("MIN_VER", "3");
     mod.addCMacro("_GNU_SOURCE", "");
@@ -46,6 +50,7 @@ fn common(mod: *std.Build.Module) void {
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const devmapper = b.option(bool, "devmapper", "Use device-mapper (dm-crypt) for mapping volumes") orelse true;
 
     const libcrypto_dep = b.dependency("libcrypto", .{
         .target = target,
@@ -59,6 +64,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     tcplay_h.addIncludePath(b.path("."));
+    if (!devmapper) tcplay_h.defineCMacro("TCPLAY_NO_DEVMAPPER", "1");
     const tcplay_h_mod = tcplay_h.createModule();
 
     const crc32 = b.addObject(.{
@@ -113,7 +119,7 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
         }),
     });
-    common(exe.root_module);
+    common(exe.root_module, devmapper);
 
     const lib_static = b.addLibrary(.{
         .name = "tcplay",
@@ -124,7 +130,7 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
         }),
     });
-    common(lib_static.root_module);
+    common(lib_static.root_module, devmapper);
 
     const lib_shared = b.addLibrary(.{
         .name = "tcplay",
@@ -135,7 +141,7 @@ pub fn build(b: *std.Build) void {
             .link_libc = true,
         }),
     });
-    common(lib_shared.root_module);
+    common(lib_shared.root_module, devmapper);
 
     for ([_]*std.Build.Step.Compile{ lib_static, lib_shared }) |lib| {
         lib.root_module.addCSourceFiles(.{

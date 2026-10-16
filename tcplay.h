@@ -77,10 +77,14 @@
 
 #define TC_FLAG_SET(f, x)	((f & TC_FLAG_##x) == TC_FLAG_##x)
 
+#include <sys/types.h>
 #include <limits.h>
 #include <inttypes.h>
+#include <time.h>
 
-#if defined(__DragonFly__)
+#if defined(TCPLAY_NO_DEVMAPPER)
+/* no device-mapper, no mapping uuid */
+#elif defined(__DragonFly__)
 #include <uuid.h>
 #elif defined(__linux__)
 #include <uuid/uuid.h>
@@ -164,8 +168,10 @@ struct tcplay_info {
 	off_t skip;	/* IV offset (in blk_sz blocks) */
 	off_t offset;	/* Block offset (in blk_sz blocks) */
 
+#ifndef TCPLAY_NO_DEVMAPPER
 	/* Populated by dm_setup */
 	uuid_t uuid;
+#endif
 
 	int hidden;
 };

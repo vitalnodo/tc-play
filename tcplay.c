@@ -45,8 +45,10 @@
 #include <err.h>
 #include <time.h>
 #if defined(__linux__)
+#ifndef TCPLAY_NO_DEVMAPPER
 #include <libdevmapper.h>
 #include <uuid/uuid.h>
+#endif
 #include <sys/sysmacros.h>
 #elif defined(__DragonFly__)
 #include <libdm.h>
@@ -1332,6 +1334,7 @@ out:
 	return ret;
 }
 
+#ifndef TCPLAY_NO_DEVMAPPER
 static
 int
 dm_get_info(const char *name, struct dm_info *dmi)
@@ -1933,6 +1936,28 @@ dm_teardown(const char *mapname, const char *device __unused)
 
 	return 0;
 }
+#else /* TCPLAY_NO_DEVMAPPER */
+struct tcplay_info *
+dm_info_map(const char *map_name __unused)
+{
+	tc_log(1, "tcplay was built without device-mapper support\n");
+	return NULL;
+}
+
+int
+dm_setup(const char *mapname __unused, struct tcplay_info *info __unused)
+{
+	tc_log(1, "tcplay was built without device-mapper support\n");
+	return ENOTSUP;
+}
+
+int
+dm_teardown(const char *mapname __unused, const char *device __unused)
+{
+	tc_log(1, "tcplay was built without device-mapper support\n");
+	return ENOTSUP;
+}
+#endif /* TCPLAY_NO_DEVMAPPER */
 
 struct tc_crypto_algo *
 check_cipher(const char *cipher, int quiet)
