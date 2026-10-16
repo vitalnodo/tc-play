@@ -1,10 +1,11 @@
 const std = @import("std");
 const testing = std.testing;
 const p = std.crypto.pwhash.pbkdf2;
-const errno = @cImport(@cInclude("errno.h"));
-const tcplay = @cImport(@cInclude("tcplay.h"));
+const tcplay = @import("tcplay");
 const whirlpool = @import("libcrypto").hash.whirlpool;
 const ripemd160 = @import("libcrypto").hash.ripemd.ripemd160;
+
+const EINVAL: c_int = @backingInt(std.c.E.INVAL);
 
 fn do_pbkdf2(
     dk: []u8,
@@ -15,7 +16,7 @@ fn do_pbkdf2(
 ) c_int {
     p(dk, password, salt, rounds, Prf) catch {
         tcplay.tc_log(1, "Error in PBKDF2\n");
-        return errno.EINVAL;
+        return EINVAL;
     };
     return 0;
 }
@@ -76,5 +77,5 @@ pub export fn pbkdf2(
             std.crypto.auth.hmac.Hmac(ripemd160),
         );
     }
-    return errno.EINVAL;
+    return EINVAL;
 }
